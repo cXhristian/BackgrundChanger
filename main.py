@@ -79,7 +79,7 @@ class Background:
 		return self.popen('gsettings get org.gnome.desktop.background picture-uri')
 
 	def set(self, image):
-		return self.popen('gsettings set org.gnome.desktop.background picture-uri ' + image)
+		return self.popen('gsettings set org.gnome.desktop.background picture-uri file://' + image)
 
 	def set_background(self, backgrounds):
 		"""Takes several backgrounds, selects a random and saves it"""
@@ -91,7 +91,7 @@ class Background:
 		filename = abspath('temp.jpg')
 		with open(filename, 'bw+') as temp:
 			temp.write(requests.get(background).content)
-		self.set('file://' + filename)
+		self.set(filename)
 		if DEBUG:
 			print(self.get())
 		return filename

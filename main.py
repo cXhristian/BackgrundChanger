@@ -88,6 +88,8 @@ class Background:
 
 	def save(self, background):
 		"""Saves background and sets it as wallpaper"""
+		if DEBUG:
+			print(background)
 		filename = abspath('temp.jpg')
 		with open(filename, 'bw+') as temp:
 			temp.write(requests.get(background).content)
@@ -97,5 +99,5 @@ class Background:
 		return filename
 
 w = Wallbase()
-#w.search('robot')
-w.random_search('nature')
+w.search('nature')
+#w.random_search('nature')

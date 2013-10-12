@@ -16,8 +16,8 @@ class ScrapeException(Exception):
 class Scrape:
 	filters = {}
 
-	def __init__(self):
-		self.background = Background()
+	def __init__(self, background):
+		self.background = background()
 		self.filters = {}
 		self.base_url = None
 
@@ -35,6 +35,10 @@ class Scrape:
 			return r.text
 		raise ScrapeException('Failed to download')
 
+	def parse(self):
+		"""Parses html for thumbnails and returns full image urls"""
+		pq = PyQuery(self.load())
+
 	def filters_querystring(self):
 		"""Turns a dict into a querystring"""
 		return '?' + '&'.join([str(key) + '=' + str(value) for key, value in self.filters.items()])
@@ -42,13 +46,12 @@ class Scrape:
 
 class Wallbase(Scrape):
 
-	def __init__(self):
-		super().__init__()
+	def __init__(self, background):
+		super().__init__(background)
 		self.base_url = 'http://wallbase.cc/search'
 
 	def parse(self):
-		"""Parses html for thumbnails and returns full image urls"""
-		pq = PyQuery(self.load())
+		super().parse()
 		thumbs = pq('section#thumbs > .thumbnail img')
 		return 	[self.thumb2full(thumb) for thumb in thumbs]
 
@@ -69,6 +72,27 @@ class Wallbase(Scrape):
 		self.background.set_background(self.parse())
 
 
+class Google(Scrape):
+
+	def __init__(self, background):
+		super().__init__(background)
+		self.base_url = 'https://www.google.com/search'
+
+	def parse(self):
+		super().parse()
+		thumbs = pq('table.images_table td')
+
+
+
+	def search(self, query):
+		"""Searches with default sorting and takes a random background from the first 20 results"""
+		self.filters = {'tbm': 'isch', 'tbs': 'isz:l', 'q': query, 'sout': 1}
+		self.background.set_background(self.parse())
+
+class Reddit(Scrape):
+	pass
+
+
 class Background:
 
 	def popen(self, command):
@@ -76,15 +100,18 @@ class Background:
 		return p.stdout.read()
 
 	def get(self):
-		return self.popen('gsettings get org.gnome.desktop.background picture-uri')
+		raise NotImplementedError
 
 	def set(self, image):
-		return self.popen('gsettings set org.gnome.desktop.background picture-uri file://' + image)
+		raise NotImplementedError
 
 	def set_background(self, backgrounds):
 		"""Takes several backgrounds, selects a random and saves it"""
-		background = choice(backgrounds)
-		self.save(background)
+		if not backgrounds:
+			print('No backgrounds found')
+		else:
+			background = choice(backgrounds)
+			self.save(background)
 
 	def save(self, background):
 		"""Saves background and sets it as wallpaper"""
@@ -96,6 +123,16 @@ class Background:
 			print(self.get())
 		return filename
 
-w = Wallbase()
+
+class GnomeBackground(Background):
+
+	def get(self):
+		return self.popen('gsettings get org.gnome.desktop.background picture-uri')
+
+	def set(self, image):
+		return self.popen('gsettings set org.gnome.desktop.background picture-uri file://' + image)
+
+
+w = Wallbase(GnomeBackground)
 #w.search('robot')
-w.random_search('nature')
+w.random_search('space')

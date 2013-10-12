@@ -5,6 +5,7 @@ from pyquery import PyQuery
 import re
 from random import choice
 from os.path import abspath
+import time
 
 DEBUG = True
 
@@ -78,7 +79,11 @@ class Background:
 	def get(self):
 		return self.popen('gsettings get org.gnome.desktop.background picture-uri')
 
-	def set(self, image):
+	def set(self, image, hack=False):
+		# Gnome 3.10 doesn't update background if using the same uri, ugly hack to fix
+		if hack:
+			self.popen('gsettings set org.gnome.desktop.background picture-uri ""')
+			time.sleep(1)
 		return self.popen('gsettings set org.gnome.desktop.background picture-uri ' + image)
 
 	def set_background(self, backgrounds):

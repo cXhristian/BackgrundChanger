@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+	#!/usr/bin/env python
 from subprocess import Popen, PIPE
 import requests
 from pyquery import PyQuery
@@ -115,6 +115,8 @@ class Background:
 
 	def save(self, background):
 		"""Saves background and sets it as wallpaper"""
+		if DEBUG:
+			print(background)
 		filename = abspath('temp.jpg')
 		with open(filename, 'bw+') as temp:
 			temp.write(requests.get(background).content)

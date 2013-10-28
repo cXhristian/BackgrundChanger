@@ -1,4 +1,4 @@
-	#!/usr/bin/env python
+#!/usr/bin/env python3
 from subprocess import Popen, PIPE
 import requests
 from pyquery import PyQuery
@@ -22,12 +22,14 @@ class Scrape:
 		self.base_url = None
 
 	def url(self):
+		"""Simple method for creating a url based on base url and querystrings"""
 		if self.filters:
 			return self.base_url + self.filters_querystring()
 		else:
 			raise ScrapeException('No fiters set')
 
 	def load(self):
+		"""Downloads html from self.url"""
 		if DEBUG:
 			print(self.url())
 		r = requests.get(self.url())
@@ -37,7 +39,7 @@ class Scrape:
 
 	def parse(self):
 		"""Parses html for thumbnails and returns full image urls"""
-		pq = PyQuery(self.load())
+		self.pq = PyQuery(self.load())
 
 	def filters_querystring(self):
 		"""Turns a dict into a querystring"""
@@ -52,11 +54,12 @@ class Wallbase(Scrape):
 
 	def parse(self):
 		super().parse()
-		thumbs = pq('section#thumbs > .thumbnail img')
+		thumbs = self.pq('section#thumbs > .thumbnail img')
 		return 	[self.thumb2full(thumb) for thumb in thumbs]
 
-	def thumb2full(self, pq):
-		thumb_name = pq.attrib['data-original']
+	def thumb2full(self, thumb):
+		"""Converts thumbnail url into full image url"""
+		thumb_name = thumb.attrib['data-original']
 		groups = lambda n: re.match('http://thumbs\.wallbase\.cc//?(.+)/thumb-(\d+)\.jpg', thumb_name).group(n)
 		return 'http://wallpapers.wallbase.cc/' + groups(1) + '/wallpaper-' + groups(2) + '.jpg'
 
@@ -80,14 +83,21 @@ class Google(Scrape):
 
 	def parse(self):
 		super().parse()
-		thumbs = pq('table.images_table td')
+		thumbs = self.pq('table.images_table td')
+		return [self.thumb2full(thumb) for thumb in thumbs]
 
-
+	def thumb2full(self, thumb):
+		google_url = thumb.find('a').attrib['href']
+		try:
+			return re.search(r'imgurl=(.+)&imgrefurl', google_url).group(1)
+		except AttributeError:
+			pass
 
 	def search(self, query):
 		"""Searches with default sorting and takes a random background from the first 20 results"""
 		self.filters = {'tbm': 'isch', 'tbs': 'isz:l', 'q': query, 'sout': 1}
 		self.background.set_background(self.parse())
+
 
 class Reddit(Scrape):
 	pass
@@ -108,7 +118,7 @@ class Background:
 	def set_background(self, backgrounds):
 		"""Takes several backgrounds, selects a random and saves it"""
 		if not backgrounds:
-			print('No backgrounds found')
+			print('No background found')
 		else:
 			background = choice(backgrounds)
 			self.save(background)
@@ -135,6 +145,6 @@ class GnomeBackground(Background):
 		return self.popen('gsettings set org.gnome.desktop.background picture-uri file://' + image)
 
 
-w = Wallbase(GnomeBackground)
-#w.search('robot')
-w.random_search('space')
+w = Google(GnomeBackground)
+w.search('robot')
+# w.random_search('space')

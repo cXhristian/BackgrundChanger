@@ -5,6 +5,7 @@ from pyquery import PyQuery
 import re
 from random import choice
 from os.path import abspath
+import time
 
 DEBUG = True
 
@@ -138,13 +139,33 @@ class Background:
 
 class GnomeBackground(Background):
 
+	def versiontuple(self, v):
+		return tuple(map(int, (v.split("."))))
+
+	def version(self):
+		version = self.popen('gnome-session --version').decode("utf-8")
+		try:
+			return self.versiontuple(re.match(r'gnome-session ([\d\.]+)', version).group(1))
+		except (ValueError, AttributeError)	:
+			return (0, 0)
+
 	def get(self):
 		return self.popen('gsettings get org.gnome.desktop.background picture-uri')
 
 	def set(self, image):
+		# Gnome 3.10 doesn't update background if using the same uri
+		print(self.version())
+		if self.version() > (3,8):
+			self.popen('gsettings set org.gnome.desktop.background picture-uri ""')
+			# Also won't update if changing too fast
+			time.sleep(1)
 		return self.popen('gsettings set org.gnome.desktop.background picture-uri file://' + image)
 
+def main():
+	w = Google(GnomeBackground)
+	w.search('robot')
+	# w.random_search('space')
 
-w = Google(GnomeBackground)
-w.search('robot')
-# w.random_search('space')
+
+if __name__ == '__main__':
+	main()

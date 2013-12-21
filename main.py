@@ -1,13 +1,12 @@
 #!/usr/bin/env python3
-from subprocess import Popen, PIPE
-import requests
-from pyquery import PyQuery
-import re
-from random import choice
 from os.path import abspath
+from pyquery import PyQuery
+from random import choice
+from subprocess import Popen, PIPE
+import json
+import re
+import requests
 import time
-
-DEBUG = True
 
 
 class ScrapeException(Exception):
@@ -41,6 +40,9 @@ class Scrape:
 	def parse(self):
 		"""Parses html for thumbnails and returns full image urls"""
 		self.pq = PyQuery(self.load())
+
+	def json_parse(self):
+		self.json = json.loads(self.load())
 
 	def filters_querystring(self):
 		"""Turns a dict into a querystring"""
@@ -101,8 +103,21 @@ class Google(Scrape):
 
 
 class Reddit(Scrape):
-	pass
+	
+	def __init__(self, background):
+		super().__init__(background)
+		self.base_url = 'http://reddit.com/'
 
+	def parse(self):
+		super().json_parse()
+		posts = self.json['data']['children']
+		image_posts = [post for post in posts if post['is_self'] == False]
+		for post in posts:
+			print(post['is_self'])
+
+	def search(self, query):
+		self.filters = {'is_self': True}
+		self.background.set_background(self.parse())
 
 class Background:
 
@@ -161,9 +176,11 @@ class GnomeBackground(Background):
 			time.sleep(1)
 		return self.popen('gsettings set org.gnome.desktop.background picture-uri file://' + image)
 
+DEBUG = True
+
 def main():
-	w = Google(GnomeBackground)
-	w.search('robot')
+	w = Wallbase(GnomeBackground)
+	w.search('space')
 	# w.random_search('space')
 
 

@@ -58,12 +58,13 @@ class Wallbase(Scrape):
 	def parse(self):
 		super().parse()
 		thumbs = self.pq('section#thumbs > .thumbnail img')
-		return 	[self.thumb2full(thumb) for thumb in thumbs]
+		return [self.thumb2full(thumb) for thumb in thumbs]
 
 	def thumb2full(self, thumb):
 		"""Converts thumbnail url into full image url"""
 		thumb_name = thumb.attrib['data-original']
-		groups = lambda n: re.match('http://thumbs\.wallbase\.cc//?(.+)/thumb-(\d+)\.jpg', thumb_name).group(n)
+		re_url = 'http://thumbs\.wallbase\.cc//?(.+)/thumb-(\d+)\.jpg'
+		groups = lambda n: re.match(re_url, thumb_name).group(n)
 		return 'http://wallpapers.wallbase.cc/' + groups(1) + '/wallpaper-' + groups(2) + '.jpg'
 
 	def random_search(self, query):
@@ -103,7 +104,7 @@ class Google(Scrape):
 
 
 class Reddit(Scrape):
-	
+
 	def __init__(self, background):
 		super().__init__(background)
 		self.base_url = 'http://reddit.com/'
@@ -111,13 +112,14 @@ class Reddit(Scrape):
 	def parse(self):
 		super().json_parse()
 		posts = self.json['data']['children']
-		image_posts = [post for post in posts if post['is_self'] == False]
+		image_posts = [post for post in posts if post['is_self'] is False]
 		for post in posts:
 			print(post['is_self'])
 
 	def search(self, query):
 		self.filters = {'is_self': True}
 		self.background.set_background(self.parse())
+
 
 class Background:
 
@@ -170,13 +172,14 @@ class GnomeBackground(Background):
 	def set(self, image):
 		# Gnome 3.10 doesn't update background if using the same uri
 		print(self.version())
-		if self.version() > (3,8):
+		if self.version() > (3, 8):
 			self.popen('gsettings set org.gnome.desktop.background picture-uri ""')
 			# Also won't update if changing too fast
 			time.sleep(1)
 		return self.popen('gsettings set org.gnome.desktop.background picture-uri file://' + image)
 
 DEBUG = True
+
 
 def main():
 	w = Wallbase(GnomeBackground)

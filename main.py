@@ -14,7 +14,7 @@ class ScrapeException(Exception):
 	pass
 
 
-class Scrape:
+class Scrape(object):
 	filters = {}
 
 	def __init__(self, background):
@@ -53,11 +53,11 @@ class Scrape:
 class Wallbase(Scrape):
 
 	def __init__(self, background):
-		super().__init__(background)
+		super(Wallbase, self).__init__(background)
 		self.base_url = 'http://wallbase.cc/search'
 
 	def parse(self):
-		super().parse()
+		super(Wallbase, self).parse()
 		thumbs = self.pq('section#thumbs > .thumbnail img')
 		return [self.thumb2full(thumb) for thumb in thumbs]
 
@@ -83,11 +83,11 @@ class Wallbase(Scrape):
 class Google(Scrape):
 
 	def __init__(self, background):
-		super().__init__(background)
+		super(Google, self).__init__(background)
 		self.base_url = 'https://www.google.com/search'
 
 	def parse(self):
-		super().parse()
+		super(Google, self).parse()
 		thumbs = self.pq('table.images_table td')
 		return [self.thumb2full(thumb) for thumb in thumbs]
 
@@ -107,11 +107,11 @@ class Google(Scrape):
 class Reddit(Scrape):
 
 	def __init__(self, background):
-		super().__init__(background)
+		super(Reddit, self).__init__(background)
 		self.base_url = 'http://reddit.com/'
 
 	def parse(self):
-		super().json_parse()
+		super(Reddit, self).json_parse()
 		posts = self.json['data']['children']
 		image_posts = [post for post in posts if post['is_self'] is False]
 		for post in posts:
@@ -122,7 +122,7 @@ class Reddit(Scrape):
 		self.background.set_background(self.parse())
 
 
-class Background:
+class Background(object):
 
 	def popen(self, command):
 		p = Popen(command.split(), stdout=PIPE)
@@ -147,7 +147,7 @@ class Background:
 		if DEBUG:
 			print(background)
 		filename = abspath('temp.jpg')
-		with open(filename, 'bw+') as temp:
+		with open(filename, 'wb+') as temp:
 			temp.write(requests.get(background).content)
 		self.set(filename)
 		if DEBUG:

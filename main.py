@@ -3,6 +3,7 @@ from os.path import abspath
 from pyquery import PyQuery
 from random import choice
 from subprocess import Popen, PIPE
+import argparse
 import json
 import re
 import requests
@@ -163,7 +164,7 @@ class GnomeBackground(Background):
 		version = self.popen('gnome-session --version').decode("utf-8")
 		try:
 			return self.versiontuple(re.match(r'gnome-session ([\d\.]+)', version).group(1))
-		except (ValueError, AttributeError)	:
+		except (ValueError, AttributeError):
 			return (0, 0)
 
 	def get(self):
@@ -182,10 +183,11 @@ DEBUG = True
 
 
 def main():
+	parser = argparse.ArgumentParser(description='Changes background')
+	parser.add_argument('search', help='')
+	args = parser.parse_args()
 	w = Wallbase(GnomeBackground)
-	w.search('space')
-	# w.random_search('space')
-
+	w.search(args.search)
 
 if __name__ == '__main__':
 	main()

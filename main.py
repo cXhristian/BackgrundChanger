@@ -1,10 +1,11 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 from os.path import abspath
 from pyquery import PyQuery
 from random import choice
 from subprocess import Popen, PIPE
 import argparse
 import json
+import os
 import re
 import requests
 import time
@@ -177,7 +178,7 @@ class GnomeBackground(Background):
         if self.version() > (3, 8):
             self.popen('gsettings set org.gnome.desktop.background picture-uri ""')
             # Also won't update if changing too fast
-            time.sleep(1)
+            time.sleep(1.5)
         return self.popen('gsettings set org.gnome.desktop.background picture-uri file://' + image)
         
         
@@ -201,14 +202,37 @@ class XfceBackground(Background):
             time.sleep(1)
         return self.popen('xfconf-query -c xfce4-desktop -p /backdrop/screen0/monitor0/image-path -s ' + image)
 
-DEBUG = True
 
+def detect_desktop_environment():
+    desktop_environment = 'generic'
+    if os.environ.get('KDE_FULL_SESSION') == 'true':
+        desktop_environment = 'kde'
+    elif os.environ.get('GNOME_DESKTOP_SESSION_ID'):
+        desktop_environment = 'gnome'
+    else:
+        try:
+            info = getoutput('xprop -root _DT_SAVE_MODE')
+            if ' = "xfce4"' in info:
+                desktop_environment = 'xfce'
+        except (OSError, RuntimeError):
+            pass
+    return desktop_environment
+
+DEBUG = True
 
 def main():
     parser = argparse.ArgumentParser(description='Changes background')
     parser.add_argument('search', help='')
     args = parser.parse_args()
-    w = Wallbase(XfceBackground)
+    de = detect_desktop_environment()
+    if de == 'gnome':
+        background_manager = GnomeBackground
+    elif de == 'xfce':
+        background_manager = XfceBackground
+    else:
+        print('Desktop environment not supported')
+        return
+    w = Wallbase(background_manager)
     w.search(args.search)
 
 if __name__ == '__main__':

@@ -75,10 +75,11 @@ class Wallbase(Scrape):
             self.filters = {'order': 'random', 'thpp': 1, 'q': query}
         self.background.set_background(self.parse())
 
-    def search(self, query):
+    def search(self, query, nsfw=False):
         """Searches with default sorting and takes a random background from the first 20 results"""
         self.filters['q'] = query
-        self.filters['purity'] = '111'
+        if nsfw:
+            self.filters['purity'] = '111'
         self.background.set_background(self.parse())
 
 
@@ -222,7 +223,8 @@ DEBUG = True
 
 def main():
     parser = argparse.ArgumentParser(description='Changes background')
-    parser.add_argument('search', help='')
+    parser.add_argument('search', help='Search term')
+    parser.add_argument('--nsfw', help='Search for nauthy pictures', action='store_true')
     args = parser.parse_args()
     de = detect_desktop_environment()
     if de == 'gnome':
@@ -233,7 +235,7 @@ def main():
         print('Desktop environment not supported')
         return
     w = Wallbase(background_manager)
-    w.search(args.search)
+    w.search(args.search, args.nsfw)
 
 if __name__ == '__main__':
     main()
